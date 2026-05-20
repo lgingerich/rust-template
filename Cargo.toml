@@ -1,0 +1,133 @@
+[package]
+name = "rust-template"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95.0"
+authors = ["TODO"]
+description = "TODO"
+readme = "README.md"
+repository = "TODO"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+
+[dev-dependencies]
+
+[profile.release]
+codegen-units = 1
+debug = 0
+debug-assertions = false
+incremental = false
+opt-level = 3
+lto = true
+panic = "abort"
+strip = "debuginfo"
+
+[profile.release-profiling]
+inherits = "release"
+debug = "line-tables-only"
+strip = "none"
+
+[profile.dev]
+codegen-units = 256
+debug = 2
+debug-assertions = true
+incremental = true
+opt-level = 0
+lto = false
+panic = "unwind"
+strip = false
+
+[lints.rust]
+missing_docs                    = "warn"
+unexpected_cfgs                 = "warn"
+unsafe_code                     = "deny"
+unsafe_op_in_unsafe_fn          = "deny"
+dead_code                       = "deny"
+unused_imports                  = "deny"
+unused_variables                = "deny"
+unused_mut                      = "deny"
+unused_assignments              = "deny"
+unused_macros                   = "deny"
+unused_qualifications           = "deny"
+unreachable_pub                 = "deny"
+unreachable_code                = "deny"
+unreachable_patterns            = "deny"
+
+[lints.clippy]
+pedantic                        = { level = "warn", priority = -2 }
+
+# === Provenance-Safe Pointer Casts ===
+borrow_as_ptr                   = "deny"
+ptr_as_ptr                      = "deny"
+ptr_cast_constness              = "deny"
+ref_as_ptr                      = "deny"
+
+# === Soundness ===
+as_ptr_cast_mut                 = "deny"
+cast_ptr_alignment              = "deny"
+drop_non_drop                   = "deny"
+mem_forget                      = "deny"
+not_unsafe_ptr_arg_deref        = "deny"
+transmute_ptr_to_ptr            = "deny"
+undocumented_unsafe_blocks      = "deny"
+uninit_vec                      = "deny"
+
+# === Performance ===
+assigning_clones                = "deny"
+format_collect                  = "deny"
+implicit_clone                  = "deny"
+inefficient_to_string           = "deny"
+iter_overeager_cloned           = "deny"
+large_enum_variant              = "deny"
+large_futures                   = "deny"
+large_stack_frames              = "deny"
+large_types_passed_by_value     = "deny"
+manual_memcpy                   = "deny"
+map_clone                       = "deny"
+needless_collect                = "deny"
+needless_pass_by_value          = "deny"
+or_fun_call                     = "deny"
+redundant_clone                 = "deny"
+trivially_copy_pass_by_ref      = "deny"
+unnecessary_lazy_evaluations    = "deny"
+unnecessary_to_owned            = "deny"
+vec_init_then_push              = "deny"
+
+# === Clarity ===
+allow_attributes                = "warn"
+arc_with_non_send_sync          = "deny"
+box_collection                  = "deny"
+boxed_local                     = "deny"
+clone_on_copy                   = "deny"
+clone_on_ref_ptr                = "deny"
+dbg_macro                       = "deny"
+debug_assert_with_mut_call      = "deny"
+derivable_impls                 = "deny"
+derive_partial_eq_without_eq    = "deny"
+empty_drop                      = "deny"
+expect_fun_call                 = "deny"
+expect_used                     = "deny"
+exit                            = "deny"
+if_same_then_else               = "deny"
+implicit_saturating_sub         = "deny"
+manual_c_str_literals           = "deny"
+manual_swap                     = "deny"
+mem_replace_option_with_none    = "deny"
+precedence                      = "deny"
+print_stderr                    = "warn"
+print_stdout                    = "warn"
+ptr_eq                          = "deny"
+redundant_locals                = "deny"
+single_char_pattern             = "deny"
+string_add_assign               = "deny"
+todo                            = "deny"
+type_complexity                 = "allow"
+unimplemented                   = "deny"
+uninlined_format_args           = "deny"
+unnecessary_unwrap              = "deny"
+unwrap_used                     = "deny"
+unused_peekable                 = "deny"
+useless_conversion              = "deny"
+used_underscore_binding         = "deny"
+vec_box                         = "deny"

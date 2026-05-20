@@ -1,0 +1,4 @@
+[env]
+# Show useful panic traces during development and test runs without the noise of
+# full std/library frames.
+RUST_BACKTRACE = "1"
