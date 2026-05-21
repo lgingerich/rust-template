@@ -1,0 +1,49 @@
+---
+description: Testing style and philosophy for Rust projects
+globs: src/**/*.rs,tests/**/*.rs,benches/**/*.rs,examples/**/*.rs
+alwaysApply: false
+---
+
+# Test Style
+
+Tests should protect behavior, contracts, and user trust, not merely increase coverage.
+
+## What To Test
+
+- Prioritize invariants that must stay true across refactors.
+- Treat public APIs, serialized formats, persisted data, CLI output, and wire protocols as contracts.
+- Add tests before changing semantics that downstream callers or stored data could rely on.
+- Test failure isolation: one bad input, record, request, file, dependency, or external response should not hide unrelated valid work unless the boundary truly cannot continue.
+- Cover edge cases, invalid inputs, empty inputs, ordering, duplicate data, and boundary values.
+
+## Test Shape
+
+- Use descriptive test names that explain the scenario and expected behavior.
+- Prefer arranging tests as setup, action, assertion.
+- Keep unit tests small and focused on one behavior.
+- Avoid tests that duplicate implementation details instead of observable behavior.
+- Avoid freezing incidental formatting unless formatting is part of the public contract.
+
+## Fakes, Fixtures, And Integration Tests
+
+- For orchestration code, use small fake implementations of local traits to verify behavior without coupling tests to external systems.
+- Prefer real fixtures when correctness depends on an external format, protocol, parser, or documented spec.
+- Use mocks sparingly. Do not mock the behavior that the test is supposed to prove.
+- For database or service integrations, prefer realistic integration tests when project infrastructure makes them practical.
+
+## Property And Regression Tests
+
+- Consider property tests for parsers, normalization, serialization round trips, scoring, aggregation, ordering, and threshold logic.
+- Add regression tests for bugs before fixing them when the bug can be reproduced locally.
+- Keep regression tests named after the behavior, not the implementation mistake.
+
+## Async Tests
+
+- Use the runtime-specific test attribute already established by the project.
+- Do not hide race conditions with arbitrary sleeps. Prefer explicit synchronization, time control, or polling with clear timeouts.
+
+## Assertions
+
+- Assert the meaningful behavior and evidence, not only that an operation succeeded.
+- Include enough context in assertion messages to make failures diagnosable.
+- In tests, `unwrap()` and `expect()` are acceptable when failure would make the test setup invalid. Use clear `expect()` messages for non-obvious invariants.

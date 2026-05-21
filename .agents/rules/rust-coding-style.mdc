@@ -1,0 +1,51 @@
+---
+description: Idiomatic Rust coding style for this project
+globs: src/**/*.rs,tests/**/*.rs,benches/**/*.rs,examples/**/*.rs,Cargo.toml
+alwaysApply: false
+---
+
+# Rust Coding Style
+
+Favor idiomatic, safe, readable Rust; optimize when there is a clear reason.
+
+## General Style
+
+- Prefer clear, direct code over clever abstractions.
+- Keep functions focused. Extract helpers when branching, conversion, or validation logic grows.
+- Use `?`, `Option`, `Result`, pattern matching, and iterators idiomatically.
+- Follow Clippy suggestions unless they make the code less clear or conflict with a deliberate API choice.
+- Avoid unnecessary `.clone()`, `.to_string()`, and allocation. If ownership is non-obvious, make the reason clear in code structure.
+- Use enums and structured types for constrained domains; avoid stringly typed core APIs.
+
+## Public APIs
+
+- Accept borrowed inputs such as `&str` and `&[T]` when ownership is not required.
+- Return owned values when the caller should own the result.
+- Avoid leaking lifetimes into public return types unless zero-copy behavior is an explicit API goal.
+- Keep external crate types behind adapters unless they are intentionally part of the public contract.
+- Keep serialization, wire-format, persistence, and framework details at the boundary of the crate.
+
+## Errors
+
+- Library APIs should expose typed errors, preferably with `thiserror`, when callers can handle variants meaningfully.
+- Use `anyhow` in binaries, examples, tests, setup code, or application boundaries where context matters more than typed API guarantees.
+- Do not use `Box<dyn Error>` as a default error strategy.
+- Avoid `unwrap()`, `expect()`, `panic!()`, `todo!()`, and `unimplemented!()` in production paths.
+- In tests, `unwrap()` and `expect()` are acceptable when they keep the test focused.
+
+## Async and Concurrency
+
+- Do not hold a `std::sync::Mutex` or `RwLock` guard across `.await`.
+- Prefer dropping synchronous guards before `.await`, or use async-aware primitives when the lock must span await points.
+- Keep blocking work out of async tasks unless it is explicitly isolated.
+
+## Unsafe
+
+- Do not introduce `unsafe` unless the user explicitly asks or the crate already requires it.
+- Every `unsafe` block must have a nearby `SAFETY:` comment explaining the invariant.
+- Every `unsafe fn` must document caller obligations in a `# Safety` section.
+
+## Documentation
+
+- Add rustdoc for important public types, traits, functions, and modules once their purpose is stable.
+- Document invariants that future callers, maintainers, or integrations may rely on.
