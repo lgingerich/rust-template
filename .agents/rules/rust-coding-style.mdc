@@ -17,6 +17,14 @@ Favor idiomatic, safe, readable Rust; optimize when there is a clear reason.
 - Avoid unnecessary `.clone()`, `.to_string()`, and allocation. If ownership is non-obvious, make the reason clear in code structure.
 - Use enums and structured types for constrained domains; avoid stringly typed core APIs.
 
+## Scope and Simplicity
+
+- Design for what you need today, not what you might need next year. Remove code that supports hypothetical use cases that have no current caller.
+- When a domain concept has variants that are mechanically identical in the code (e.g., different enum variants producing the same plan steps), collapse them into one. Distinguish only what changes behavior.
+- Do not predefine capability sets for platforms you have not shipped for. Providers declare their own capabilities; the core model stays abstract.
+- If a module exists only to encode assumptions about specific platforms (e.g., provider capability tables for Argo, Vercel, Cloudflare), it is premature. Delete it until the first production adapter exists.
+- Shrink surface area on each pass. Fewer types, fewer variants, fewer public exports. Every type you keep creates a maintenance obligation.
+
 ## Public APIs
 
 - Accept borrowed inputs such as `&str` and `&[T]` when ownership is not required.
