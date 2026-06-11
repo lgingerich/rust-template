@@ -17,14 +17,6 @@ Favor idiomatic, safe, readable Rust; optimize when there is a clear reason.
 - Avoid unnecessary `.clone()`, `.to_string()`, and allocation. If ownership is non-obvious, make the reason clear in code structure.
 - Use enums and structured types for constrained domains; avoid stringly typed core APIs.
 
-## Scope and Simplicity
-
-- Design for what you need today, not what you might need next year. Remove code that supports hypothetical use cases that have no current caller.
-- When a domain concept has variants that are mechanically identical in the code (e.g., different enum variants producing the same plan steps), collapse them into one. Distinguish only what changes behavior.
-- Do not predefine capability sets for platforms you have not shipped for. Providers declare their own capabilities; the core model stays abstract.
-- If a module exists only to encode assumptions about specific platforms (e.g., provider capability tables for Argo, Vercel, Cloudflare), it is premature. Delete it until the first production adapter exists.
-- Shrink surface area on each pass. Fewer types, fewer variants, fewer public exports. Every type you keep creates a maintenance obligation.
-
 ## Public APIs
 
 - Accept borrowed inputs such as `&str` and `&[T]` when ownership is not required.
@@ -40,6 +32,61 @@ Favor idiomatic, safe, readable Rust; optimize when there is a clear reason.
 - Do not use `Box<dyn Error>` as a default error strategy.
 - Avoid `unwrap()`, `expect()`, `panic!()`, `todo!()`, and `unimplemented!()` in production paths.
 - In tests, `unwrap()` and `expect()` are acceptable when they keep the test focused.
+
+### Error layering
+
+Error types form a chain from domain-internal to I/O-facing. Each layer
+adds a `#[from]` variant for the layer below, so `?` auto-converts up
+the chain without `map_err`:
+
+```
+leaf error (finest granularity — validation, constraints)
+  ├─→ mid-layer error A  (#[from])
+  ├─→ mid-layer error B  (#[from])
+  └─→ top-level error    (#[from])
+
+mid-layer A ──→ top-level error (#[from])
+mid-layer B ──→ top-level error (#[from])
+top-level   ──→ application error (#[from])
+```
+
+Example: `ValidationError` → `DomainError` → `ServiceError` → `ApiError`.
+The names don't matter; the direction and the `#[from]` chain do.
+
+Rules:
+
+- Domain constructors and validation functions return the leaf error type
+  — never a higher-layer error. A domain operation should not know about
+  request parsing, config keys, or HTTP status codes.
+- Add a `#[from]` variant when a broader error type should propagate
+  failures from the layer below. `?` does the rest.
+- Leaf errors should carry enough context for the caller to identify the
+  offending input (e.g. a field name, a value snippet, a constraint
+  description). Do not `map_err` just to rename the field — the domain
+  type's own label is the canonical identifier.
+
+### When `map_err` is a code smell
+
+`map_err` is a signal. Before writing it, check:
+
+1. **Is a `From` impl missing?** If you're converting by hand between
+   two error types in the same crate, add `#[from]` instead and use `?`.
+2. **Is a domain function returning a higher-layer error?** If a
+   validation function returns an HTTP-layer or serialization-layer
+   error, the layers are inverted. Move the conversion to the boundary
+   where that context belongs.
+
+Legitimate uses of `map_err`:
+
+- **Bridging to `&'static str` in tests** (or to any error type where a
+  `From` impl would be inappropriate or impossible, e.g. across crate
+  boundaries with orphan-rule constraints). Use
+  `.map_err(|_| "human-readable context")?`.
+- **Context-dependent error construction at a boundary.** When a
+  caller-specific piece of data (like a config key path or a request ID)
+  must be injected into an error variant, and that data is unavailable
+  inside the lower-layer error. This should live at the boundary, not
+  inside a domain helper.
 
 ## Async and Concurrency
 
