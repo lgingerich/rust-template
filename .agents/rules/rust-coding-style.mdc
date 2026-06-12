@@ -27,6 +27,7 @@ Favor idiomatic, safe, readable Rust; optimize when there is a clear reason.
 ## Public APIs
 
 - Prefer private fields by default. Make fields `pub` only when external code genuinely needs direct access for readability, performance, or API contracts. When cross-module access is needed but direct field exposure is unnecessary, prefer a `pub fn` accessor over a `pub` field.
+- When multiple concrete types share a guaranteed common capability, add the same public accessor to each for API consistency — this is not speculative infrastructure, it is making an existing surface uniform.
 - Accept borrowed inputs such as `&str` and `&[T]` when ownership is not required.
 - Return owned values when the caller should own the result.
 - Avoid leaking lifetimes into public return types unless zero-copy behavior is an explicit API goal.
