@@ -10,6 +10,12 @@ Guidance for AI coding agents working in this repository.
 - Stay in scope. Only modify files and code directly related to the current task.
 - Do not refactor, rename, reformat, or reorganize unrelated code. Mention worthwhile follow-ups instead of making them.
 - Ask before big changes that restructure existing code, remove behavior, change public APIs, or alter project conventions.
+- Do not preserve backwards compatibility for internal Rust APIs unless the user
+  explicitly asks. When an internal API needs different semantics, update the
+  existing method/type directly and migrate call sites.
+- Do not add parallel helper methods such as `*_trusted`, `*_unchecked`, or
+  alternate constructors merely to avoid changing existing internal callers.
+  Prefer one clear method with the correct invariant boundary.
 - Admit uncertainty before it costs the user. If a fact, version, API, or approach is uncertain, say so before relying on it.
 - Before destructive or irreversible actions, explain the impact and wait for explicit confirmation.
 

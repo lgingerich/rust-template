@@ -17,6 +17,13 @@ Favor idiomatic, safe, readable Rust; optimize when there is a clear reason.
 - Avoid unnecessary `.clone()`, `.to_string()`, and allocation. If ownership is non-obvious, make the reason clear in code structure.
 - Use enums and structured types for constrained domains; avoid stringly typed core APIs.
 
+## Internal API Changes
+
+- Do not preserve backwards compatibility for internal Rust APIs unless explicitly requested.
+- When internal semantics need to change, update the existing method/type directly and migrate call sites.
+- Do not add parallel variants like `*_trusted`, `*_unchecked`, `try_*`, or duplicate constructors just to avoid touching callers.
+- Prefer one clear API with the correct invariant boundary over multiple methods that differ only by validation assumptions.
+
 ## Public APIs
 
 - Accept borrowed inputs such as `&str` and `&[T]` when ownership is not required.
