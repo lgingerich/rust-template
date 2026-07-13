@@ -17,6 +17,25 @@ Favor idiomatic, safe, readable Rust; optimize when there is a clear reason.
 - Avoid unnecessary `.clone()`, `.to_string()`, and allocation. If ownership is non-obvious, make the reason clear in code structure.
 - Use enums and structured types for constrained domains; avoid stringly typed core APIs.
 
+### Type conversions belong on the type
+
+Free functions that only map a domain type to another representation are a smell.
+Put the conversion on the type via a standard trait, then call that at use sites.
+
+Common cases:
+
+- **Stable string labels** (persistence, wire formats, logs): implement `Display`.
+  Prefer this over helpers like `fn status_str(status: Status) -> &'static str`.
+  Use `to_string()` / `format!("{value}")` at call sites. Add `AsRef<str>` only when a
+  caller needs a borrowed `&str` without allocating.
+- **Owned / borrowed conversions**: use `From` / `Into` / `TryFrom` / `AsRef` / `Borrow`
+  instead of one-off `fn to_*` / `fn from_*` free functions in the same crate.
+- **Parse round-trips**: pair display labels with `FromStr` when callers need to parse
+  the same canonical form back.
+
+Do not invent parallel private converters at each call-site module when the type itself
+can own a single canonical conversion.
+
 ## Internal API Changes
 
 - Do not preserve backwards compatibility for internal Rust APIs unless explicitly requested.
