@@ -29,13 +29,6 @@ Guidance for AI coding agents working in this repository.
 - Prefer clear public APIs, useful documentation, and focused tests.
 - Do not weaken lint levels, release profiles, or CI checks without calling it out first.
 
-## Project Memory
-
-- If `MEMORY.md` exists, read it before making architectural or convention changes.
-- After significant decisions, update `MEMORY.md` with what was decided, why, and what was rejected.
-- If `ERRORS.md` exists, check it before retrying similar failed approaches.
-- When an approach takes more than two attempts, update `ERRORS.md` with what failed and what worked instead.
-
 ## Verification
 
 After code changes, run the relevant checks:
