@@ -1,134 +1,159 @@
 ---
-description: Idiomatic Rust coding style for this project
-globs: src/**/*.rs,tests/**/*.rs,benches/**/*.rs,examples/**/*.rs,Cargo.toml
+description: Idiomatic Rust coding style
+globs: **/*.rs,Cargo.toml
 alwaysApply: false
 ---
 
 # Rust Coding Style
 
-Favor idiomatic, safe, readable Rust; optimize when there is a clear reason.
+Favor idiomatic, safe, readable Rust; optimize when there is a clear reason (see Performance).
 
 ## General Style
 
 - Prefer clear, direct code over clever abstractions.
-- Keep functions focused. Extract helpers when branching, conversion, or validation logic grows.
+- Keep functions focused; extract helpers when branching, conversion, or validation grows.
 - Use `?`, `Option`, `Result`, pattern matching, and iterators idiomatically.
-- Follow Clippy suggestions unless they make the code less clear or conflict with a deliberate API choice.
-- Avoid unnecessary `.clone()`, `.to_string()`, and allocation. If ownership is non-obvious, make the reason clear in code structure.
-- Use enums and structured types for constrained domains; avoid stringly typed core APIs.
+- Follow Clippy unless it makes the code less clear or conflicts with a deliberate API choice.
+- Avoid unnecessary `.clone()`, `.to_string()`, and allocation; make non-obvious ownership clear in the code's structure.
+- Use enums and structured types for constrained domains; no stringly typed core APIs.
 
 ### Type conversions belong on the type
 
-Free functions that only map a domain type to another representation are a smell.
-Put the conversion on the type via a standard trait, then call that at use sites.
+A free function whose only job is mapping a domain type to another representation is a
+smell. Put the conversion on the type via a standard trait and call that at use sites.
 
-Common cases:
-
-- **Stable string labels** (persistence, wire formats, logs): implement `Display`.
-  Prefer this over helpers like `fn status_str(status: Status) -> &'static str`.
-  Use `to_string()` / `format!("{value}")` at call sites. Add `AsRef<str>` only when a
-  caller needs a borrowed `&str` without allocating.
-- **Owned / borrowed conversions**: use `From` / `Into` / `TryFrom` / `AsRef` / `Borrow`
-  instead of one-off `fn to_*` / `fn from_*` free functions in the same crate.
-- **Parse round-trips**: pair display labels with `FromStr` when callers need to parse
-  the same canonical form back.
-
-Do not invent parallel private converters at each call-site module when the type itself
-can own a single canonical conversion.
+- **String labels** (persistence, wire formats, logs): implement `Display`, and `FromStr`
+  for the parse round-trip. Add `AsRef<str>` only when a caller needs a borrowed `&str`.
+- **Owned/borrowed conversions**: use `From`/`Into`/`TryFrom`/`AsRef`/`Borrow` instead of
+  one-off `to_*`/`from_*` free functions.
+- Don't add parallel private converters per module; the type owns one canonical conversion.
 
 ## Internal API Changes
 
-- Do not preserve backwards compatibility for internal Rust APIs unless explicitly requested.
-- When internal semantics need to change, update the existing method/type directly and migrate call sites.
-- Do not add parallel variants like `*_trusted`, `*_unchecked`, `try_*`, or duplicate constructors just to avoid touching callers.
-- Prefer one clear API with the correct invariant boundary over multiple methods that differ only by validation assumptions.
+- Don't preserve backwards compatibility for internal APIs unless explicitly requested.
+- When semantics change, update the existing method/type and migrate call sites — don't add
+  parallel `*_trusted`/`*_unchecked`/`try_*` variants or duplicate constructors.
+- Prefer one clear API with the right invariant boundary over methods that differ only by
+  validation assumptions.
 
 ## Public APIs
 
-- Prefer private fields by default. Make fields `pub` only when external code genuinely needs direct access for readability, performance, or API contracts. When cross-module access is needed but direct field exposure is unnecessary, prefer a `pub fn` accessor over a `pub` field.
-- When multiple concrete types share a guaranteed common capability, add the same public accessor to each for API consistency — this is not speculative infrastructure, it is making an existing surface uniform.
-- Accept borrowed inputs such as `&str` and `&[T]` when ownership is not required.
-- Return owned values when the caller should own the result.
-- Avoid leaking lifetimes into public return types unless zero-copy behavior is an explicit API goal.
-- Keep external crate types behind adapters unless they are intentionally part of the public contract.
-- Keep serialization, wire-format, persistence, and framework details at the boundary of the crate.
+- Prefer private fields and `pub fn` accessors; make a field `pub` only when external code
+  genuinely needs direct access.
+- Accept borrowed inputs (`&str`, `&[T]`) when ownership isn't required; return owned values
+  when the caller should own the result.
+- Avoid leaking lifetimes into public return types unless zero-copy is an explicit API goal.
+- Keep external crate types, serialization, wire formats, and framework details at the crate
+  boundary unless they're intentionally part of the contract.
+- Give sibling types that share a guaranteed capability the same accessor — API consistency
+  isn't speculative infrastructure.
 
 ## Errors
 
-- Library APIs should expose typed errors, preferably with `thiserror`, when callers can handle variants meaningfully.
-- Use `anyhow` in binaries, examples, tests, setup code, or application boundaries where context matters more than typed API guarantees.
-- Do not use `Box<dyn Error>` as a default error strategy.
-- Avoid `unwrap()`, `expect()`, `panic!()`, `todo!()`, and `unimplemented!()` in production paths.
-- In tests, `unwrap()` and `expect()` are acceptable when they keep the test focused.
+- Library APIs should expose typed errors (`thiserror`) when callers can act on variants.
+- Use `anyhow` in binaries, examples, tests, and application boundaries, where context
+  matters more than typed guarantees.
+- Don't use `Box<dyn Error>` as a default error strategy.
+- Avoid `panic!()`, `todo!()`, and `unimplemented!()` in production paths.
 
 ### Error layering
 
-Error types form a chain from domain-internal to I/O-facing. Each layer
-adds a `#[from]` variant for the layer below, so `?` auto-converts up
-the chain without `map_err`:
+Error types form a chain from domain-internal to I/O-facing. Each layer adds a `#[from]`
+variant for the layer below, so `?` auto-converts up the chain:
 
 ```
-leaf error (finest granularity — validation, constraints)
-  ├─→ mid-layer error A  (#[from])
-  ├─→ mid-layer error B  (#[from])
-  └─→ top-level error    (#[from])
-
-mid-layer A ──→ top-level error (#[from])
-mid-layer B ──→ top-level error (#[from])
-top-level   ──→ application error (#[from])
+leaf error (validation, constraints)
+  -> mid-layer errors -> top-level error -> application error
 ```
 
-Example: `ValidationError` → `DomainError` → `ServiceError` → `ApiError`.
-The names don't matter; the direction and the `#[from]` chain do.
+Example: `ValidationError` -> `DomainError` -> `ServiceError` -> `ApiError`. The names
+don't matter; the direction and the `#[from]` chain do.
 
-Rules:
-
-- Domain constructors and validation functions return the leaf error type
-  — never a higher-layer error. A domain operation should not know about
-  request parsing, config keys, or HTTP status codes.
-- Add a `#[from]` variant when a broader error type should propagate
-  failures from the layer below. `?` does the rest.
-- Leaf errors should carry enough context for the caller to identify the
-  offending input (e.g. a field name, a value snippet, a constraint
-  description). Do not `map_err` just to rename the field — the domain
-  type's own label is the canonical identifier.
+- Domain constructors and validation return the leaf error, never a higher layer — a domain
+  operation shouldn't know about request parsing, config keys, or HTTP status.
+- Add a `#[from]` variant when a broader error should propagate the layer below; `?` does
+  the rest.
+- Leaf errors should identify the offending input (field, value snippet, constraint). Don't
+  `map_err` just to rename it — the domain type's own label is canonical.
 
 ### When `map_err` is a code smell
 
-`map_err` is a signal. Before writing it, check:
+`map_err` usually signals one of two mistakes:
 
-1. **Is a `From` impl missing?** If you're converting by hand between
-   two error types in the same crate, add `#[from]` instead and use `?`.
-2. **Is a domain function returning a higher-layer error?** If a
-   validation function returns an HTTP-layer or serialization-layer
-   error, the layers are inverted. Move the conversion to the boundary
-   where that context belongs.
+1. **A missing `From` impl** between two error types in the same crate — add `#[from]` and
+   use `?`.
+2. **An inverted layer** — a validation function returning an HTTP or serialization error.
+   Move the conversion to the boundary where that context belongs.
 
-Legitimate uses of `map_err`:
-
-- **Bridging to `&'static str` in tests** (or to any error type where a
-  `From` impl would be inappropriate or impossible, e.g. across crate
-  boundaries with orphan-rule constraints). Use
-  `.map_err(|_| "human-readable context")?`.
-- **Context-dependent error construction at a boundary.** When a
-  caller-specific piece of data (like a config key path or a request ID)
-  must be injected into an error variant, and that data is unavailable
-  inside the lower-layer error. This should live at the boundary, not
-  inside a domain helper.
+It's legitimate at a boundary when caller-specific data (config key, request ID) must be
+injected into a variant that can't know it, or when `From` is impossible (e.g. bridging to
+`&'static str` in tests, or across crate boundaries with orphan-rule constraints).
 
 ## Async and Concurrency
 
-- Do not hold a `std::sync::Mutex` or `RwLock` guard across `.await`.
-- Prefer dropping synchronous guards before `.await`, or use async-aware primitives when the lock must span await points.
-- Keep blocking work out of async tasks unless it is explicitly isolated.
+- Never hold a `std::sync::Mutex`/`RwLock` guard across `.await`; drop it first, or use an
+  async-aware primitive when the lock must span await points.
+- Keep blocking work out of async tasks unless explicitly isolated.
+
+## Performance
+
+Performance is a design-time concern: the large wins are data layout, batching, and I/O —
+not micro-tweaks. Rust removes the GC tax but not the cost of allocation, indirection,
+dispatch, or syscalls. Design first, then measure.
+
+- **Sketch the budget before you build**, then optimize the slowest resource first, weighted
+  by how often it's hit:
+  ```
+  Network: requests/s x bytes     = bandwidth
+  Disk:    writes/s   x bytes     = throughput
+  Memory:  items      x bytes     = working set
+  Compute: ops        x cycles    = CPU budget
+  ```
+- **Optimize the percentile that matters.** The mean hides the p99/p999 the workload is
+  actually judged on.
+- **Measure before optimizing.** Never tune from intuition; profile a release build with
+  symbols using whatever profiler the repository standardizes on, and keep its existing
+  benchmark harness. One run is noise — confirm with a repeatable measurement.
+- **Hold hot paths to zero allocation.** Reuse buffers (`Vec::clear`, not a fresh `Vec`),
+  preallocate with `with_capacity`, and keep `format!`/`to_string`/`collect`/`clone` out of
+  loops — including across stream/request loops. Borrow as `&str`/`&[T]`, use `Cow` when
+  ownership is genuinely conditional, and prefer zero-copy borrows over parsed input (e.g.
+  `&RawValue`, `#[serde(borrow)] Cow<'de, str>`) to decoding into owned structs.
+- **Make execution bounded and predictable.** Bound loops, queues, and buffers; batch work
+  to amortize per-call overhead. Unbounded growth means reallocation, rehashing, and latency
+  spikes.
+- **Design the data.** CPUs are memory-bound: prefer contiguous `Vec`/slice iteration over
+  pointer chasing, keep hot structs small, use struct-of-arrays when only some fields are
+  hot, and keep `Box`/`Rc`/`Arc` out of the hottest structures.
+- **Prefer static dispatch on the hot path.** Generics and iterator chains monomorphize to
+  tight loops and usually elide bounds checks; `dyn Trait`/`Box<dyn ...>` add indirection and
+  inhibit inlining. Keep dynamic dispatch at the boundary.
+- **Move data directly** (network/service). Don't copy or serialize in the data plane:
+  borrow existing buffers, take zero-copy slices, pass ownership instead of cloning, and use
+  buffered, batched I/O — syscall count is the cost, not bytes.
+- **Async is not free** (network/service). Keep futures small and spawn coarse units of work,
+  not one task per item; batching and message passing beat fine-grained shared state.
+- **Take hidden costs seriously.** `Deref` chains, `From`/`Into`, `Arc` clones, `format!` in
+  logging, and the default `HashMap` hasher are cheap-looking but measurable. Fix what the
+  profile shows; leave the rest.
+- **Add hints only with evidence.** `#[inline]`, `#[cold]`, custom hashers,
+  `target-cpu=native`, and PGO are levers, not defaults — `lto` and `codegen-units = 1`
+  already do most of the work. Keep the benchmark that justified the hint.
+
+When a hot path changes, state the budget it targets and the measurement behind it.
+
+Don't reach for `unsafe` or unchecked indexing for performance; the Clippy performance lints
+in `Cargo.toml` deny the common cases. If a measurement ever justifies more, raise the lint
+change for review rather than writing around it.
 
 ## Unsafe
 
-- Do not introduce `unsafe` unless the user explicitly asks or the crate already requires it.
-- Every `unsafe` block must have a nearby `SAFETY:` comment explaining the invariant.
+- Don't introduce `unsafe` unless the user explicitly asks or the crate already requires it.
+- Every `unsafe` block needs a nearby `SAFETY:` comment explaining the invariant.
 - Every `unsafe fn` must document caller obligations in a `# Safety` section.
 
 ## Documentation
 
-- Add rustdoc for important public types, traits, functions, and modules once their purpose is stable.
+- Add rustdoc for important public types, traits, functions, and modules once their purpose
+  is stable.
 - Document invariants that future callers, maintainers, or integrations may rely on.
