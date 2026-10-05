@@ -10,13 +10,23 @@ A strict Rust project starter focused on safety, performance, and predictable to
 - Stable `rustfmt.toml`
 - Cargo backtraces for local development and tests
 - GitHub Actions CI for format, lint, and test checks
+- Build caching via [`kache`](https://github.com/kunobi-ninja/kache), set as the `rustc-wrapper` in `.cargo/config.toml`
 
 ## First Steps
 
-1. Rename the package in `Cargo.toml`.
-2. Update `authors`, `description`, `repository`, and `license`.
-3. Replace `src/lib.rs` with your project code.
-4. Run:
+1. Install the build cache wrapper:
+
+   ```bash
+   cargo install kache --locked
+   ```
+
+   `kache` is set as `rustc-wrapper` in `.cargo/config.toml`, so it must be on
+   `PATH` to build. To build without it, run `RUSTC_WRAPPER= cargo build`.
+
+2. Rename the package in `Cargo.toml`.
+3. Update `authors`, `description`, `repository`, and `license`.
+4. Replace `src/lib.rs` with your project code.
+5. Run:
 
    ```bash
    cargo fmt
