@@ -24,7 +24,10 @@ A strict Rust project starter focused on safety, performance, and predictable to
    `PATH` to build. To build without it, run `RUSTC_WRAPPER= cargo build`.
 
 2. Rename the package in `Cargo.toml`.
-3. Update `authors`, `description`, `repository`, and `license`.
+3. Update `description` and `repository` in `Cargo.toml`. Keep the MIT license or
+   update both `license` and `LICENSE` to match your project's terms. Preserve
+   existing copyright notices on retained template material and add your own
+   for your contributions.
 4. Replace `src/lib.rs` with your project code.
 5. Run:
 
@@ -33,3 +36,7 @@ A strict Rust project starter focused on safety, performance, and predictable to
    cargo clippy --all-targets --all-features
    cargo test
    ```
+
+## License
+
+MIT. See [LICENSE](./LICENSE) for the full text.
