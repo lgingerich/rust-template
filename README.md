@@ -8,8 +8,8 @@ A strict Rust project starter focused on safety, performance, and predictable to
 - Strict Rust and Clippy lint configuration
 - Release, profiling, and development Cargo profiles
 - Stable `rustfmt.toml`
-- Cargo backtraces for local development and tests
-- GitHub Actions CI for format, lint, and test checks
+- GitHub Actions CI for format, lint, docs, and test checks, with dependency caching
+- Dependabot updates for Cargo dependencies and GitHub Actions
 - Build caching via [`kache`](https://github.com/kunobi-ninja/kache), set as the `rustc-wrapper` in `.cargo/config.toml`
 
 ## First Steps

@@ -38,6 +38,7 @@ strip = false
 
 [lints.rust]
 missing_docs                    = "warn"
+missing_debug_implementations   = "warn"
 unexpected_cfgs                 = "warn"
 unsafe_code                     = "deny"
 unsafe_op_in_unsafe_fn          = "deny"
