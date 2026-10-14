@@ -12,9 +12,15 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Debug info is most of a dependency's build output, and the cache restores all of it on
+# every run, so CI builds without it. A test panic still names its file and line.
+env:
+  CARGO_PROFILE_DEV_DEBUG: 0
+
 jobs:
   check:
-    runs-on: ubuntu-latest
+    # Pinned so a runner image change is a deliberate bump, not a surprise.
+    runs-on: ubuntu-24.04
     env:
       RUSTDOCFLAGS: -D warnings
       # kache is a local-only build cache; CI uses rust-cache instead.
@@ -23,7 +29,10 @@ jobs:
       - uses: actions/checkout@v7
       # Installs the toolchain and components pinned in rust-toolchain.toml.
       - run: rustup toolchain install
+      # Saved from `main` only: pull requests restore `main`'s cache without evicting it.
       - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - uses: taiki-e/install-action@nextest
       - run: cargo fmt --check
       - run: cargo clippy --locked --all-targets --all-features -- -D warnings
