@@ -20,7 +20,7 @@ jobs:
       # kache is a local-only build cache; CI uses rust-cache instead.
       RUSTC_WRAPPER: ""
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # Installs the toolchain and components pinned in rust-toolchain.toml.
       - run: rustup toolchain install
       - uses: Swatinem/rust-cache@v2
