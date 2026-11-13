@@ -3,3 +3,10 @@ RUST_BACKTRACE = "0"
 
 [build]
 rustc-wrapper = "kache"
+
+# Dependency cooldown: the resolver skips crate versions published in the last 3 days,
+# giving the ecosystem time to catch a compromised release. Versions already in
+# Cargo.lock are unaffected. Override one update with
+# `CARGO_RESOLVER_INCOMPATIBLE_PUBLISH_AGE=allow cargo update <crate> --precise <version>`.
+[registry]
+global-min-publish-age = "3 days"

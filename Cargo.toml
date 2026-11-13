@@ -53,6 +53,9 @@ unreachable_pub                 = "deny"
 unreachable_code                = "deny"
 unreachable_patterns            = "deny"
 
+[lints.cargo]
+unused_dependencies             = "deny"
+
 [lints.clippy]
 pedantic                        = { level = "warn", priority = -2 }
 

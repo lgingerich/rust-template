@@ -5,11 +5,12 @@ A strict Rust project starter focused on safety, performance, and predictable to
 ## Included
 
 - Pinned stable Rust toolchain with `rustfmt` and `clippy`
-- Strict Rust and Clippy lint configuration
+- Strict Rust, Clippy, and Cargo lint configuration, including denying unused dependencies
 - Release, profiling, and development Cargo profiles
 - Stable `rustfmt.toml`
 - GitHub Actions CI for format, lint, docs, and test checks, with dependency caching
 - Dependabot updates for Cargo dependencies and GitHub Actions
+- A 3-day dependency cooldown: Cargo and Dependabot skip crate versions published in the last 3 days
 - Build caching via [`kache`](https://github.com/kunobi-ninja/kache), set as the `rustc-wrapper` in `.cargo/config.toml`
 
 ## First Steps
