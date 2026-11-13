@@ -22,6 +22,9 @@ jobs:
     # Pinned so a runner image change is a deliberate bump, not a surprise.
     runs-on: ubuntu-24.04
     env:
+      # Lints are mostly `warn` so local builds keep going; CI fails on any warning,
+      # including Cargo's own lints, which `-D warnings` does not reach.
+      CARGO_BUILD_WARNINGS: deny
       RUSTDOCFLAGS: -D warnings
       # kache is a local-only build cache; CI uses rust-cache instead.
       RUSTC_WRAPPER: ""

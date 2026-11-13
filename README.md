@@ -5,7 +5,7 @@ A strict Rust project starter focused on safety, performance, and predictable to
 ## Included
 
 - Pinned stable Rust toolchain with `rustfmt` and `clippy`
-- Strict Rust, Clippy, and Cargo lint configuration, including denying unused dependencies
+- Strict Rust, Clippy, and Cargo lint configuration; CI fails on any warning, including unused dependencies
 - Release, profiling, and development Cargo profiles
 - Stable `rustfmt.toml`
 - GitHub Actions CI for format, lint, docs, and test checks, with dependency caching
