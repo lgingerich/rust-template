@@ -2,7 +2,7 @@
 name = "rust-template"
 version = "0.1.0"
 edition = "2024"
-rust-version = "1.99.0"
+rust-version = "1.100.0"
 description = "TODO"
 readme = "README.md"
 repository = "TODO"
