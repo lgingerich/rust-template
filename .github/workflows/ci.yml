@@ -37,6 +37,18 @@ jobs:
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - uses: taiki-e/install-action@nextest
+      # Each `.rs` file directly in a crate's `tests/` is a separate test binary.
+      # Integration tests belong in `tests/<name>/main.rs` (see .agents/rules/test-style.mdc).
+      - name: Integration tests are grouped
+        run: |
+          stray=$(find . -path ./target -prune -o -name Cargo.toml -print | while read -r manifest; do
+            ls "$(dirname "$manifest")"/tests/*.rs 2>/dev/null
+          done)
+          if [ -n "$stray" ]; then
+            echo "$stray"
+            echo "Move these into tests/<name>/ as modules of its main.rs"
+            exit 1
+          fi
       - run: cargo fmt --check
       - run: cargo clippy --locked --all-targets --all-features -- -D warnings
       - run: cargo doc --locked --no-deps --all-features

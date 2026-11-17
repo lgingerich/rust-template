@@ -36,6 +36,11 @@ lto = false
 panic = "unwind"
 strip = false
 
+# Dependencies build without debug info: about 20% smaller debug builds at no build-time
+# cost. This workspace's own crates keep full debug info for backtraces and debuggers.
+[profile.dev.package."*"]
+debug = false
+
 [lints.rust]
 # Levels: `deny` fails every build, for code that is unsound or definitely wrong.
 # `warn` lets local builds continue; CI sets CARGO_BUILD_WARNINGS=deny, so every

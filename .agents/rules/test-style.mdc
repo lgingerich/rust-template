@@ -31,6 +31,28 @@ Tests should protect behavior, contracts, and user trust, not merely increase co
 - Use mocks sparingly. Do not mock the behavior that the test is supposed to prove.
 - For database or service integrations, prefer realistic integration tests when project infrastructure makes them practical.
 
+## Integration Test Layout
+
+Each `.rs` file directly in `tests/` is a separate test binary that links the crate and every dependency again. Group integration tests by directory instead:
+
+```
+tests/
+  integration/      # offline tests
+    main.rs         # mod common; mod orders;
+    common.rs
+    orders.rs
+  live/             # only if some tests need network or credentials
+    main.rs
+```
+
+- Use one binary per crate, plus `live/` only for tests that need network or credentials.
+- Add a new test file as a module of an existing binary, never directly in `tests/`.
+- Shared helpers are a module of the binary that uses them.
+- Build fixture paths from `env!("CARGO_MANIFEST_DIR")`.
+- Select tests by name: `cargo test --test integration orders`.
+
+CI enforces this layout. Do not use `autotests = false` instead: it silently skips new test files.
+
 ## Property And Regression Tests
 
 - Consider property tests for parsers, normalization, serialization round trips, scoring, aggregation, ordering, and threshold logic.

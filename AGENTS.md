@@ -26,6 +26,9 @@ Guidance for AI coding agents working in this repository.
 - Keep this template library-first unless the user asks for binary-specific structure.
 - Preserve the pinned Rust toolchain in `rust-toolchain.toml` unless asked to change it.
 - Match the existing strict lint style in `Cargo.toml`.
+- Put integration tests in `tests/<name>/main.rs` with each test file as a module.
+  Never put `.rs` files directly in `tests/`: each one is a separate test binary. See
+  `.agents/rules/test-style.mdc`.
 - Prefer clear public APIs, useful documentation, and focused tests.
 - Do not weaken lint levels, release profiles, or CI checks without calling it out first.
 
