@@ -1,57 +1,51 @@
 # AGENTS.md
 
-Guidance for AI coding agents working in this repository.
+Read `ARCHITECTURE.md` before non-trivial changes.
 
-## Core Behavior
-
+## Workflow & Behavior
 - Ask before assuming when requirements, architecture, or intent are unclear.
-- Prefer the simplest solution that satisfies the request.
-- Think before writing code for architecture, debugging, or non-trivial feature work. Surface the approach and tradeoffs first.
-- Stay in scope. Only modify files and code directly related to the current task.
-- Do not refactor, rename, reformat, or reorganize unrelated code. Mention worthwhile follow-ups instead of making them.
-- Ask before big changes that restructure existing code, remove behavior, change public APIs, or alter project conventions.
-- Do not preserve backwards compatibility for internal Rust APIs unless the user
-  explicitly asks. When an internal API needs different semantics, update the
-  existing method/type directly and migrate call sites.
-- Do not add parallel helper methods such as `*_trusted`, `*_unchecked`, or
-  alternate constructors merely to avoid changing existing internal callers.
-  Prefer one clear method with the correct invariant boundary.
-- Admit uncertainty before it costs the user. If a fact, version, API, or approach is uncertain, say so before relying on it.
-- Before destructive or irreversible actions, explain the impact and wait for explicit confirmation.
+- Think before coding on design or debugging; surface tradeoffs first.
+- Stay strictly in scope: only edit files required by the task. Mention unrelated follow-ups instead of making them.
+- Ask before restructuring code, changing public APIs, weakening lints/CI/profiles, adding dependencies, or running destructive actions.
+- Admit uncertainty instead of guessing.
+- No filler openers ("Great question", "Certainly"). Start with the answer or action; end with what changed and how it was verified.
 
-## Rust Project Standards
+## Minimum Code That Works
+Understand the problem and trace the real flow first, then stop at the first rung that holds:
+1. Does this need to be built at all? (YAGNI)
+2. Does a helper or pattern already exist in this repo? Reuse it.
+3. Does `std`, the platform, or an existing dependency cover it? Use it.
+4. Can it be one line? Make it one line.
+5. Otherwise, write the minimum code that works.
 
-- Use Cargo for all Rust workflows.
-- Lock the tech stack to Rust, Cargo, rustfmt, Clippy, rustdoc, and cargo-nextest unless the user asks for alternatives.
-- Keep this template library-first unless the user asks for binary-specific structure.
-- Preserve the pinned Rust toolchain in `rust-toolchain.toml` unless asked to change it.
-- Match the existing strict lint style in `Cargo.toml`.
-- Put integration tests in `tests/<name>/main.rs` with each test file as a module.
-  Never put `.rs` files directly in `tests/`: each one is a separate test binary. See
-  `.agents/rules/test-style.mdc`.
-- Prefer clear public APIs, useful documentation, and focused tests.
-- Do not weaken lint levels, release profiles, or CI checks without calling it out first.
+- Deletion over addition; boring over clever; fewest files possible.
+- Fix root causes, not symptoms: grep all callers of any shared function you touch and fix it once.
+- Question overbuilt requests ("Do you need X, or does Y cover it?").
+- When two stdlib options are the same size, pick the edge-case-correct one.
+- Mark deliberate simplifications that cut a corner with a known ceiling (e.g., global lock, O(n^2) scan) with a comment naming the ceiling and upgrade path.
+- Never cut corners on trust-boundary validation, data-loss prevention, security, or explicitly requested behavior. Non-trivial logic must leave one minimal runnable check behind.
+
+## Rust & API Rules
+`Cargo.toml` and `clippy.toml` enforce formatting, `unsafe` bans, docs, panics, complexity, and common perf lints. Beyond those:
+- **No internal back-compat**: when internal semantics change, update the method/type and migrate callers. Never add parallel `*_trusted`/`*_unchecked` helpers or duplicate constructors.
+- **Conversions on the type**: implement `Display`/`FromStr`, `From`/`TryFrom`/`AsRef`/`Borrow` rather than one-off `to_*`/`from_*` free functions.
+- **Public APIs**: private fields with `pub fn` accessors; accept borrowed inputs (`&str`, `&[T]`) and return owned values unless zero-copy is explicit; keep external/wire types at crate boundaries; use identical accessor names across sibling types.
+- **Errors**: typed `thiserror` in libraries, `anyhow` in binaries/tests/examples, no `Box<dyn Error>`. Layer bottom-up with `#[from]` (`leaf -> domain -> boundary`); leaf errors name the bad input/constraint. Avoid `map_err` unless injecting boundary-only context or crossing orphan-rule limits.
+- **Performance**: measure a release-with-symbols build before optimizing, and keep the benchmark justifying any `#[inline]`, `#[cold]`, or custom hasher. Keep hot paths zero-allocation, bounded, contiguous, and statically dispatched (`dyn Trait`/`Arc`/`Box` at boundaries). Never add `unsafe` for speed without measurements and sign-off.
+
+## Tests
+- Group integration tests under `tests/integration/main.rs` (plus `tests/live/main.rs` only for network/credentials) with submodules. Never place `.rs` files directly in `tests/` and never set `autotests = false`. Build fixture paths from `env!("CARGO_MANIFEST_DIR")`.
+- Test observable contracts, invariants, edge cases, and failure isolation—not implementation details or incidental formatting.
+- Prefer real fixtures for formats/parsers and small local fakes over mocks. Write a behavior-named regression test before fixing a reproducible bug; use property tests for parsers and round-trips.
+- No arbitrary sleeps in async tests; use explicit synchronization or time control.
 
 ## Verification
-
-After code changes, run the relevant checks:
+After code changes, run the CI-equivalent checks (prefix with `RUSTC_WRAPPER=""` if `kache` is not installed):
 
 ```bash
 cargo fmt --check
-cargo clippy --all-targets --all-features -- -D warnings
-cargo doc --no-deps --all-features
-cargo test
+CARGO_BUILD_WARNINGS=deny cargo clippy --all-targets --all-features -- -D warnings
+RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --all-features
+cargo test --doc
+cargo nextest run --all-targets --all-features --no-tests pass # or: cargo test --all-targets --all-features
 ```
-
-If `cargo nextest` is installed, also run:
-
-```bash
-cargo nextest run --all-targets --all-features
-```
-
-## Communication
-
-- Never open with filler phrases like "Great question", "Of course", or "Certainly". Start with the answer or action.
-- Match length to the task. Be concise for small tasks and more detailed for design/debugging work.
-- Summarize what changed and how it was verified.
-- Mention useful follow-ups, but do not implement them without being asked.
