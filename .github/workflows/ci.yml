@@ -38,7 +38,7 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - uses: taiki-e/install-action@nextest
       # Each `.rs` file directly in a crate's `tests/` is a separate test binary.
-      # Integration tests belong in `tests/<name>/main.rs` (see .agents/rules/test-style.mdc).
+      # Integration tests belong in `tests/<name>/main.rs` (see AGENTS.md).
       - name: Integration tests are grouped
         run: |
           stray=$(find . -path ./target -prune -o -name Cargo.toml -print | while read -r manifest; do
