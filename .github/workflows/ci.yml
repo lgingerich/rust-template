@@ -42,7 +42,7 @@ jobs:
       - name: Integration tests are grouped
         run: |
           stray=$(find . -path ./target -prune -o -name Cargo.toml -print | while read -r manifest; do
-            ls "$(dirname "$manifest")"/tests/*.rs 2>/dev/null
+            ls "$(dirname "$manifest")"/tests/*.rs 2>/dev/null || true
           done)
           if [ -n "$stray" ]; then
             echo "$stray"
